@@ -1,8 +1,23 @@
 import argparse
 from models.SiameseCBOW import SiameseCBOW
-from preprocess.load import *
+from preprocess.load import load
 import os
+
+#########################################################################################
+#  Config
+#########################################################################################
+
 file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'save')
+
+#########################################################################################
+#  Hyper-parameters
+#########################################################################################
+
+input_dim = 1000 # Vocabulary size
+output_dim = 512 # Sentence length
+input_length = 100 # Embedding dimension
+n_positive = 2 # Number of positice sample
+n_negative = 5 # Number of negative sample
 
 
 def main():
@@ -12,7 +27,7 @@ def main():
     source=args.SOURCE
     x, y = load(source)
     
-    model = SiameseCBOW(input_dim, output_dim, input_length=100, n_potitive=2, n_negative=5)
+    model = SiameseCBOW(input_dim, output_dim, input_length=input_length, n_positive=n_positive, n_negative=n_negative)
     model.fit(x, y)
     if not os.path.exists(file_path):
         os.makedirs(file_path)
