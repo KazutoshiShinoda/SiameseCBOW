@@ -22,10 +22,11 @@ n_negative = 5 # Number of negative sample
 
 def main():
     parser = argparse.ArgumentParser(description='SiameseCBOW')
-    parser.add_argument('SOURCE', help='source sentence list')
+    parser.add_argument('--file', '-f', default=None,
+                        help='file path of source sentences')
     args = parser.parse_args()
-    source=args.SOURCE
-    x, y = load(source)
+    file=args.file
+    x, y = load(file)
     
     model = SiameseCBOW(input_dim, output_dim, input_length=input_length, n_positive=n_positive, n_negative=n_negative)
     model.fit(x, y)
