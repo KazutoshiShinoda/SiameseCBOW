@@ -47,7 +47,7 @@ If you want, please set Hyper-parameters such as embedding dimension in main.py.
 Please execute this command at the git project directory:
 
 ```
-$ python main.py <data_path>
+$ python main.py -f <data_path>
 ```
 
 and a pickle file of an embedding vector will be saved in ```./save/```.
