@@ -18,6 +18,7 @@ output_dim = 512 # Sentence length
 input_length = 100 # Embedding dimension
 n_positive = 2 # Number of positice sample
 n_negative = 5 # Number of negative sample
+epochs = 50
 
 
 def main():
@@ -29,7 +30,7 @@ def main():
     x, y = load(file)
     
     model = SiameseCBOW(input_dim, output_dim, input_length=input_length, n_positive=n_positive, n_negative=n_negative)
-    model.fit(x, y)
+    model.fit(x, y, epochs=epochs)
     if not os.path.exists(file_path):
         os.makedirs(file_path)
     model.save_embedding_vectors(os.path.join(file_path, 'embedding_vectors.pickle'))
