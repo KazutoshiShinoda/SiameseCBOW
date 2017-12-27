@@ -15,7 +15,7 @@ class SiameseCBOW():
         n_positive (int): the number of the positive samples
         n_negative (int): the number of the negatice samples
     """
-    def __init__(input_dim, output_dim, input_length=100, n_potitive=2, n_negative=5):
+    def __init__(input_dim, output_dim, input_length=100, n_positive=2, n_negative=5):
         def antirectifier(x):
             sums = K.sum(x, axis=1, keepdims=False)
             normalisers = tf.count_nonzero(
