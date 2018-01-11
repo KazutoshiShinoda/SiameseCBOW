@@ -5,7 +5,8 @@ import re
 columns=["sentenceId","category","sectionType","sectionCategory","section4","5","6","7","8","9","10","content"]
 
 
-class PathLineSentences():
+class PathLineDocuments():
+    """Load sentences through files"""
     def __init__(self, source, limit=None):
         self.source = source
         self.limit = limit
@@ -22,7 +23,7 @@ class PathLineSentences():
     def __iter__(self):
         """iterate through the files"""
         for file_name in self.input_files:
-            yield self.read_csv(file_name)
+            yield self.read_tsv(file_name)
     
     def read_tsv(self, document):
         self._sentences=[]
