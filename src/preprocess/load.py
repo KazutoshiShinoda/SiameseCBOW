@@ -1,6 +1,9 @@
 import os
-import pandas as pd
 import re
+import numpy as np
+import pandas as pd
+import random as rd
+from .utils import padding
 
 columns=["sentenceId","category","sectionType","sectionCategory","section4","5","6","7","8","9","10","content"]
 
@@ -73,3 +76,57 @@ class PathLineDocuments():
             raise ValueError('error while processing: {}'.format(document))
         else:
             return self._ids, self._sentences
+        
+class DataLoader():
+    def __init__(self, batch_size, n_positive, n_negative, seq_length, token2id, random_seed=42):
+        assert isinstance(documents, PathLineDocuments)
+        self.batch_size = batch_size
+        self.n_positive = n_positive
+        self.n_negative = n_negative
+        self.seq_length = seq_length
+        self.token2id = token2id
+        self.unk = token2id['<UNK>']
+        rd.seed(random_seed)
+        
+    def __iter__(self):
+        batch_x=[]
+        tar=[]
+        pos=[[] for i in range(self.n_positive)]
+        neg=[[] for i in range(self.n_negative)]
+        batch_y=np.array(([1]*self.n_positive+[0]*self.n_negative)*self.batch_size).reshape(
+            self.batch_size, self.n_positive+self.n_negative)
+        for ids, document in documents:
+            ids = np.array(ids)
+            sections = np.unique(ids[:,0])
+            current_section = ids[0,0]
+            for t, s_id in enumerate(ids):
+                if current_section != s_id[0]:
+                    # new section
+                    continue
+                elif t==len(ids)-1:
+                    # the end of a document
+                    break
+                elif current_section != ids[t+1,0]:
+                    # the end of a section
+                    continue
+                else:
+                    tar.append(self.get_id_sequence(document[t]))
+                    pos[0].append(self.get_id_sequence(document[t-1]))
+                    pos[1].append(self.get_id_sequence(document[t+1]))
+                    for i, n in enumerate(rd.sample(self.other_than(document, t-1, t+1)), self.n_negative):
+                        neg[i].append(self.get_id_sequence(n))
+                    if len(tar)==self.batch_size:
+                        yield ([np.array(tar)]+[np.array(p) for p in pos]+[np.array(n) for n in neg], batch_y)
+                    
+                    
+    def get_id_sequence(self, line):
+        line = line.strip().lower().split()
+        return padding(line, self.seq_length, self.unk)
+    
+    def other_than(self, some_list, inf, sup):
+        if inf==0:
+            return some_list[sup+1:]
+        elif sup==len(some_list)-1:
+            return some_list[:inf]
+        else:
+            return some_list[:inf] + some_list[sup+1:]
