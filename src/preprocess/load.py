@@ -45,46 +45,44 @@ class PathLineDocuments():
         sentence_ids = document["sentenceId"].values
         contents = document["content"].values
         section_types = document["sectionType"].values
-        try:
-            for sentence_id, content, section_type in zip(sentence_ids, contents, section_types):
-                s_id = sentence_id.split('-')
-                assert len(s_id) == 5
-                sec_i = 0
-                if s_id[1] == '0':
-                    # main title
+        sec_i = 0
+        par_i = 0
+        sen_i = 0
+        for sentence_id, content, section_type in zip(sentence_ids, contents, section_types):
+            s_id = sentence_id.split('-')
+            assert len(s_id) == 5
+            if s_id[1] == '0':
+                # main title
+                continue
+            elif section_type in ['ReferenceHeader', 'AcknowledgementHeader']:
+                # Appendix
+                break
+            else:
+                if section_type in ['Footnote', 'Caption']:
+                    # Don't add contents other than the main sentences
                     continue
-                elif section_type in ['ReferenceHeader', 'AcknowledgementHeader']:
-                    # Appendix
-                    break
-                else:
-                    if section_type in ['Footnote', 'Caption']:
-                        # Don't add contents other than the main sentences
-                        continue
-                    elif s_id[2]+s_id[3]+s_id[4]=='000':
-                        # Header
-                        title_match = re.match(r"[0-9]*[.{,1}[0-9]+]* .*", content)
-                        if title_match:
-                            # When the title match the type like '0.0.0 ***'
-                            title = title_match.group()
-                            pos = title.find(' ')
-                            sec_title = title[pos+1:]
-                        else:
-                            # When the section title has no numbers at its head
-                            sec_title = content
-                        sec_i += 1
-                        self._section_titles.append(sec_title)
-                        par_i=0
-                        sen_i=0
+                elif s_id[2]+s_id[3]+s_id[4]=='000':
+                    # Header
+                    title_match = re.match(r"[0-9]*[.{,1}[0-9]+]* .*", content)
+                    if title_match:
+                        # When the title match the type like '0.0.0 ***'
+                        title = title_match.group()
+                        pos = title.find(' ')
+                        sec_title = title[pos+1:]
                     else:
-                        if par_i != int(s_id[3]):
-                            par_i = int(s_id[3])
-                        self._sentences.append(content)
-                        self._ids.append([sec_i, par_i, sen_i])
-                        sen_i += 1
-        except:
-            raise ValueError('error while processing: {}'.format(document))
-        else:
-            return self._ids, self._sentences
+                        # When the section title has no numbers at its head
+                        sec_title = content
+                    sec_i += 1
+                    self._section_titles.append(sec_title)
+                    par_i=0
+                    sen_i=0
+                else:
+                    if par_i != int(s_id[3]):
+                        par_i = int(s_id[3])
+                    self._sentences.append(content)
+                    self._ids.append([sec_i, par_i, sen_i])
+                    sen_i += 1
+        return self._ids, self._sentences
         
 class DataLoader():
     def __init__(self, documents, batch_size, n_positive, n_negative, seq_length, token2id, random_seed=42):
@@ -105,6 +103,8 @@ class DataLoader():
         batch_y=np.array(([1]*self.n_positive+[0]*self.n_negative)*self.batch_size).reshape(
             self.batch_size, self.n_positive+self.n_negative)
         for ids, document in self.documents:
+            if len(document) < 1 + self.n_positive + self.n_negative:
+                continue
             ids = np.array(ids)
             sections = np.unique(ids[:,0])
             current_section = ids[0,0]
@@ -118,6 +118,15 @@ class DataLoader():
                 elif current_section != ids[t+1,0]:
                     # the end of a section
                     continue
+                elif isinstance(document[t-1], float):
+                    if np.isnan(document[t-1]):
+                        continue
+                elif isinstance(document[t], float):
+                    if np.isnan(document[t]):
+                        continue
+                elif isinstance(document[t+1], float):
+                    if np.isnan(document[t+1]):
+                        continue
                 else:
                     tar.append(self.get_id_sequence(document[t]))
                     pos[0].append(self.get_id_sequence(document[t-1]))

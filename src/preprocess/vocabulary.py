@@ -1,4 +1,5 @@
 from .load import PathLineDocuments
+from numpy import isnan
 
 columns=["sentenceId","category","sectionType","sectionCategory","section4","5","6","7","8","9","10","content"]
 
@@ -15,6 +16,9 @@ class Vocab():
         raw_vocab={}
         for ids, doc in documents:
             for sen in doc:
+                if isinstance(sen, float):
+                    if isnan(sen):
+                        continue
                 sen = sen.strip().lower().split()
                 for word in sen:
                     raw_vocab[word] = raw_vocab.get(word, 0)+1
