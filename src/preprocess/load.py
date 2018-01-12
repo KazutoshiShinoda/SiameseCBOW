@@ -99,12 +99,12 @@ class DataLoader():
         rd.seed(random_seed)
         
     def __iter__(self):
+        tar=[]
+        pos=[[] for i in range(self.n_positive)]
+        neg=[[] for i in range(self.n_negative)]
         batch_y=np.array(([1]*self.n_positive+[0]*self.n_negative)*self.batch_size).reshape(
             self.batch_size, self.n_positive+self.n_negative)
         for ids, document in self.documents:
-            tar=[]
-            pos=[[] for i in range(self.n_positive)]
-            neg=[[] for i in range(self.n_negative)]
             ids = np.array(ids)
             sections = np.unique(ids[:,0])
             current_section = ids[0,0]
