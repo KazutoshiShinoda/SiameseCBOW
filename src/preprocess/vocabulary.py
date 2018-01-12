@@ -1,4 +1,4 @@
-from load import PathLineDocuments
+from .load import PathLineDocuments
 
 columns=["sentenceId","category","sectionType","sectionCategory","section4","5","6","7","8","9","10","content"]
 

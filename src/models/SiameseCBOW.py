@@ -15,7 +15,7 @@ class SiameseCBOW():
         n_positive (int): the number of the positive samples
         n_negative (int): the number of the negatice samples
     """
-    def __init__(input_dim, output_dim, input_length=100, n_positive=2, n_negative=5):
+    def __init__(self, input_dim, output_dim, input_length=100, n_positive=2, n_negative=5):
         def antirectifier(x):
             sums = K.sum(x, axis=1, keepdims=False)
             normalisers = tf.count_nonzero(
@@ -50,18 +50,26 @@ class SiameseCBOW():
         model.compile(optimizer='adam', loss='categorical_crossentropy')
         self.model = model
     
-    def fit(self, x, y, epochs=50):
+    def fit(self, x, y, epochs=1, verbose=1):
         """Train the model
         
         Args:
             x: input
                 x must be a list of (1 + n_positive + n_negative) numpy.ndarray elements
-                and the shape of each element should be (batch_size, input_length).
-                The order of the list must be in a order like [a target sentence, positive samples, negative samples]
+                and the shape of each element should be (None, input_length).
+                The order of the list must be in a order like [a target sentence, positive sample 1, ... , negative sample 1, ...]
             y: output
-                y must be a numpy.ndarray whose shape is (batch_size, (n_positice + n_negative)).
+                y must be a numpy.ndarray whose shape is (None, (n_positice + n_negative)).
         """
-        self.model.fit(x, y, epochs=epochs)
+        self.model.fit(x, y, epochs=epochs, verbose=verbose)
+    
+    def fit_generator(self, generator, steps_per_epoch=None, epochs=1, verbose=1):
+        """Train the model on tha data fed by `generator`
+        
+        Args:
+            generator
+        """
+        self.model.fit_generator(generator, steps_per_epoch=steps_per_epoch, epochs=epochs, verbose=verbose)
     
     def predict(self, x):
         return self.model.predict(x)
@@ -71,7 +79,7 @@ class SiameseCBOW():
     
     def save_embedding_vectors(self, path):
         with open(path, mode='wb') as f:
-            pickle.dump(self.get_embed_vectors, f)
+            pickle.dump(self.get_embedding_vectors(), f)
     
     def save(self, path):
         self.model.save(path)

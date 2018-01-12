@@ -13,6 +13,8 @@ class PathLineDocuments():
     def __init__(self, source, limit=None):
         self.source = source
         self.limit = limit
+        self.num_valid_data=0
+        self.is_counted=False
         if os.path.isfile(self.source):
             self.input_files = [self.source]
         elif os.path.isdir(self.source):
@@ -26,7 +28,14 @@ class PathLineDocuments():
     def __iter__(self):
         """iterate through the files"""
         for file_name in self.input_files:
-            yield self.read_tsv(file_name)
+            ids, document = self.read_tsv(file_name)
+            if not self.is_counted:
+                self.num_valid_data += len(document) - len(np.unique(np.array(ids)[:,1]))*2
+            yield (ids, document)
+        if not self.is_counted:
+            print("loaded {} files.".format(len(self.input_files)))
+            print("There are {} sentences available for training.".format(self.num_valid_data))
+            self.is_counted=True
     
     def read_tsv(self, document):
         self._sentences=[]
@@ -78,8 +87,9 @@ class PathLineDocuments():
             return self._ids, self._sentences
         
 class DataLoader():
-    def __init__(self, batch_size, n_positive, n_negative, seq_length, token2id, random_seed=42):
+    def __init__(self, documents, batch_size, n_positive, n_negative, seq_length, token2id, random_seed=42):
         assert isinstance(documents, PathLineDocuments)
+        self.documents = documents
         self.batch_size = batch_size
         self.n_positive = n_positive
         self.n_negative = n_negative
@@ -89,13 +99,12 @@ class DataLoader():
         rd.seed(random_seed)
         
     def __iter__(self):
-        batch_x=[]
-        tar=[]
-        pos=[[] for i in range(self.n_positive)]
-        neg=[[] for i in range(self.n_negative)]
         batch_y=np.array(([1]*self.n_positive+[0]*self.n_negative)*self.batch_size).reshape(
             self.batch_size, self.n_positive+self.n_negative)
-        for ids, document in documents:
+        for ids, document in self.documents:
+            tar=[]
+            pos=[[] for i in range(self.n_positive)]
+            neg=[[] for i in range(self.n_negative)]
             ids = np.array(ids)
             sections = np.unique(ids[:,0])
             current_section = ids[0,0]
@@ -113,14 +122,17 @@ class DataLoader():
                     tar.append(self.get_id_sequence(document[t]))
                     pos[0].append(self.get_id_sequence(document[t-1]))
                     pos[1].append(self.get_id_sequence(document[t+1]))
-                    for i, n in enumerate(rd.sample(self.other_than(document, t-1, t+1)), self.n_negative):
+                    for i, n in enumerate(rd.sample(self.other_than(document, t-1, t+1), self.n_negative)):
                         neg[i].append(self.get_id_sequence(n))
                     if len(tar)==self.batch_size:
                         yield ([np.array(tar)]+[np.array(p) for p in pos]+[np.array(n) for n in neg], batch_y)
-                    
-                    
+                        tar=[]
+                        pos=[[] for i in range(self.n_positive)]
+                        neg=[[] for i in range(self.n_negative)]
+    
     def get_id_sequence(self, line):
         line = line.strip().lower().split()
+        line = list(map(lambda x: self.token2id.get(x, 0), line))
         return padding(line, self.seq_length, self.unk)
     
     def other_than(self, some_list, inf, sup):
