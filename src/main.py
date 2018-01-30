@@ -32,7 +32,7 @@ def main():
     file=args.file
     ids_documents = PathLineDocuments(file)
     vocab = Vocab()
-    vocab.build_vocab(ids_documents, min_freq=1)
+    vocab.build_vocab(ids_documents, min_freq=3)
     input_dim = vocab.num_vocab
     data_loader = DataLoader(ids_documents, batch_size, n_positive, n_negative, seq_length, vocab.token2id)
     if ids_documents.is_counted:
