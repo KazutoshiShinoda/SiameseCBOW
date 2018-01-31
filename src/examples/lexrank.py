@@ -2,7 +2,7 @@ import numpy as np
 
 
 class LexRank():
-    def __init__(self, threshold=0.3, damping_factor=0.1, error_tolerance=0.01):
+    def __init__(self, threshold=0.3, damping_factor=0.1, error_tolerance=0.0001):
         self.threshold = threshold
         self.damping_factor = damping_factor
         self.error_tolerance = error_tolerance
@@ -16,7 +16,7 @@ class LexRank():
         ranking = np.argsort(self.p)[::-1]
         return score, ranking
 
-    def do_markov_chain(self, vectors):
+    def do_markov_chain(self):
         U = np.ones((self.n_node, self.n_node)) / self.n_node
         degrees = np.sum(self.sim_matrix, axis=1, keepdims=True)
         B = self.sim_matrix / degrees
