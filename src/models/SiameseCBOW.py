@@ -31,21 +31,22 @@ class SiameseCBOW():
             norm0 = tf.norm(x[0], ord=2, axis=1, keep_dims=True)
             norm1 = tf.norm(x[1], ord=2, axis=1, keep_dims=True)
             return dot_products / norm0 / norm1
-        main_input = Input(shape=(input_length,), dtype='int32', name='main_input')
-        pos_inputs = [Input(shape=(input_length,), dtype='int32', name='positive_input_{}'.format(i)) for i in range(n_positive)]
-        neg_inputs = [Input(shape=(input_length,), dtype='int32', name='negative_input_{}'.format(i)) for i in range(n_negative)]
-        embed = Embedding(output_dim=output_dim, input_dim=input_dim, input_length=input_length, name='embedding')
-        s = embed(main_input)
-        s_p = [embed(i) for i in pos_inputs]
-        s_n = [embed(i) for i in neg_inputs]
-        ave = Lambda(antirectifier, output_shape=antirectifier_output_shape, name='average')
-        ave_s = ave(s)
-        ave_s_p = [ave(i) for i in s_p]
-        ave_s_n = [ave(i) for i in s_n]
-        cos_p = [merge([ave_s, l], mode=lambda x: cossim(x), output_shape=(1,), name='p_cos_sim_{}'.format(i)) for i, l in enumerate(ave_s_p)]
-        cos_n = [merge([ave_s, l], mode=lambda x: cossim(x), output_shape=(1,), name='n_cos_sim_{}'.format(i)) for i, l in enumerate(ave_s_n)]
-        z = concatenate(cos_p + cos_n, axis=1, name='concatenate')
-        pred = Activation('softmax')(z)
+        with tf.device('/device:GPU:0'):
+            main_input = Input(shape=(input_length,), dtype='int32', name='main_input')
+            pos_inputs = [Input(shape=(input_length,), dtype='int32', name='positive_input_{}'.format(i)) for i in range(n_positive)]
+            neg_inputs = [Input(shape=(input_length,), dtype='int32', name='negative_input_{}'.format(i)) for i in range(n_negative)]
+            embed = Embedding(output_dim=output_dim, input_dim=input_dim, input_length=input_length, name='embedding')
+            s = embed(main_input)
+            s_p = [embed(i) for i in pos_inputs]
+            s_n = [embed(i) for i in neg_inputs]
+            ave = Lambda(antirectifier, output_shape=antirectifier_output_shape, name='average')
+            ave_s = ave(s)
+            ave_s_p = [ave(i) for i in s_p]
+            ave_s_n = [ave(i) for i in s_n]
+            cos_p = [merge([ave_s, l], mode=lambda x: cossim(x), output_shape=(1,), name='p_cos_sim_{}'.format(i)) for i, l in enumerate(ave_s_p)]
+            cos_n = [merge([ave_s, l], mode=lambda x: cossim(x), output_shape=(1,), name='n_cos_sim_{}'.format(i)) for i, l in enumerate(ave_s_n)]
+            z = concatenate(cos_p + cos_n, axis=1, name='concatenate')
+            pred = Activation('softmax')(z)
         model = Model(inputs=[main_input] + pos_inputs + neg_inputs, outputs=pred)
         model.compile(optimizer='adam', loss='categorical_crossentropy')
         self.model = model

@@ -1,10 +1,10 @@
 import numpy as np
-from ..preprocess.load import PathLineDocuments
+from preprocess.load import PathLineDocuments
 
 
-class TFIDF():
+def TFIDF(sentences):
     """Compute TFIDF vector based on a set of sentences or documents.
-    
+
     Args:
         sentences (list): a list of sentences or documents.
                             each element shoud be a list of words.
@@ -12,30 +12,29 @@ class TFIDF():
     Ex:
         sentences = [['he', 'is', 'the', ...], ['it', 'is', 'unbeliev', ...]]
     """
-    def __init__(self, sentences):
-        assert isinstance(sentences, list)
-        assert isinstance(sentences[0], list)
-        
-        unique_words = np.unique(np.concatenate(sentences, 0))
-        self.token2id = {u: i for i, u in enumerate(unique_words)}
-        
-        self.n_sen = len(sentences)
-        self.n_vocab = len(self.token2id)
-        
-        tf = self.compute_tf(sentences)
-        tfidf = self.compute_tfidf(tf)
-        return tfidf
+    assert isinstance(sentences, list)
+    assert isinstance(sentences[0], list)
 
-    def compute_tf(self, sentences):
-        tf = np.zeros((self.n_sen, self.n_vocab))
-        for row, sentence in enumerate(sentences):
-            for word in sentence:
-                column = self.token2id[word]
-                tf[row, column] += 1
-        return tf
+    unique_words = np.unique(np.concatenate(sentences, 0))
+    token2id = {u: i for i, u in enumerate(unique_words)}
 
-    def compute_tfidf(self, tf):
-        df = np.count_nonzero(tf, 0)
-        idf = self.n_sen / df
-        tfidf = df * np.log(idf)
-        return tfidf
+    n_sen = len(sentences)
+    n_vocab = len(token2id)
+
+    tf = compute_tf(sentences, token2id, n_sen, n_vocab)
+    tfidf = compute_tfidf(tf, n_sen)
+    return tfidf
+
+def compute_tf(sentences, token2id, n_sen, n_vocab):
+    tf = np.zeros((n_sen, n_vocab))
+    for row, sentence in enumerate(sentences):
+        for word in sentence:
+            column = token2id[word]
+            tf[row, column] += 1
+    return tf
+
+def compute_tfidf(tf, n_sen):
+    df = np.count_nonzero(tf, 0)
+    idf = n_sen / df
+    tfidf = tf * np.log(idf)
+    return tfidf

@@ -40,7 +40,7 @@ def main():
     else:
         raise ValueError("The number of valid data is not counted.")
     model = SiameseCBOW(input_dim, output_dim, input_length=seq_length, n_positive=n_positive, n_negative=n_negative)
-    model.fit_generator(iter(data_loader), steps_per_epoch=steps_per_epoch, epochs=epochs)
+    model.fit_generator(iter(data_loader), steps_per_epoch=80000, epochs=epochs)
     if not os.path.exists(file_path):
         os.makedirs(file_path)
     model.save_embedding_vectors(os.path.join(file_path, 'embedding_vectors.pickle'))
