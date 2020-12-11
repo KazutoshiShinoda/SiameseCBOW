@@ -15,7 +15,7 @@ Implementation of [SiameseCBOW](http://www.aclweb.org/anthology/P16-1089) using 
 ### 0. Installation
 
 ```
-$ pip install -r requirments.txt
+$ pip install -r requirements.txt
 ```
 
 ### 1. Customize src/load.py
